@@ -65,11 +65,15 @@ def _cmd_editor(*args):
     tmpfpath = _logs_dir / f"{_str_sanitize(recipient)}.log"
     res = _cur.execute("SELECT timestamp, from_jid, message FROM `chatlogs` WHERE from_jid=:jid OR to_jid=:jid ORDER BY id", {"jid": recipient})
 
-    for msg in res.fetchall():
+    for bmsg in res.fetchall():
+        try:
+            msg = [x.decode("UTF-8", errors="backslashreplace") for x in bmsg]
+        except Exception as e:
+            msg = [x.decode("UTF-8", errors="replace") for x in bmsg]
         sender = "me" if msg[1] == _current_user else msg[1]
         msg_buffer.append(f"{msg[0]} - {sender}: {msg[2]}")
 
-    tmpfpath.write_text('\n'.join(msg_buffer))
+    tmpfpath.write_text('\n'.join(msg_buffer), encoding="UTF-8", errors="replace")
 
     pid = os.fork()
     if pid == 0:
@@ -131,6 +135,7 @@ def _init(fulljid):
         _show_error(f"Log db is not present. Path: {db_file}")
         return
     con = sqlite3.connect(f"{db_file}")
+    con.text_factory = bytes
     _cur = con.cursor()
     _editor = prof.settings_string_get("history", "editor", "")
     if not _editor:
