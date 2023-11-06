@@ -1,5 +1,6 @@
-# Profanity-Plugins
+# Profanity-Plugins (PP)
 Collection of plugins for the [profanity](https://github.com/profanity-im/profanity).
+
 
 ## How to install plugins
 Copy the command from the bottom of the plugin's description to you Profanity and execute it.
@@ -15,49 +16,49 @@ Copy the command from the bottom of the plugin's description to you Profanity an
 
 
 ## AntiSpam Plugin
-### Overview
+#### Overview
 Enhance your Profanity XMPP client with the Anti-Spam Plugin, a powerful tool to keep spam at bay and maintain a clean and secure communication environment. This plugin offers an array of features and settings, allowing you to verify new contacts, manage your anti-spam preferences, and intelligently handle XMPP stanzas.
 
-### Key Features:
+#### Key Features:
 - **Effortless Verification:** New contacts are prompted with a captcha-like question, ensuring they are genuine.
 - **User-Friendly Management:** Customize and fine-tune anti-spam settings with ease using a variety of commands.
 - **Stanza Intelligence:** The plugin effectively manages XMPP stanzas, including messages, presence notifications, and IQ stanzas, providing granular control over anti-spam logic.
 
-### Why Choose the Anti-Spam Plugin?
+#### Why Choose the Anti-Spam Plugin?
 - Enjoy a spam-free Profanity experience.
 - Keep your inbox clean and secure.
 - Streamline anti-spam settings.
 
-### Installation command
+#### Installation command
 `/plugins install https://raw.githubusercontent.com/H3rnand3zzz/profanity-plugins/master/antispam.py`
 
 
 ## History
-### Overview
+#### Overview
 The Message History Viewer Plugin for Profanity allows you to access and review your chat history conveniently. It enables you to open your chat history with a specific user in your preferred text editor.
 
-### Key Features
+#### Key Features
 - **Chat History Access:** Quickly access and review your message history.
 - **Editor Integration:** Open your chat history with a user in your preferred text editor.
 
-### Why Choose the Message History Viewer Plugin?
+#### Why Choose the Message History Viewer Plugin?
 - Effortlessly access and revisit your chat history.
 - Enjoy a personalized viewing experience with your favorite text editor.
 
 Simplify your chat history management with the Message History Viewer Plugin for Profanity.
 
-### Installation command
+#### Installation command
 `/plugins install https://raw.githubusercontent.com/H3rnand3zzz/profanity-plugins/master/history.py`
 
 
 ## Security-Tips
-### Overview
+#### Overview
 The Anonymity Tips Plugin for Profanity provides a random security tip to help you maintain your anonymity while using the application and communicating through internet in general.
 
-### Key Feature
+#### Key Feature
 - **Random Tips:** Receive a variety of valuable tips on staying anonymous and secure online.
 
 Simplify your security awareness with the Anonymity Tips Plugin for Profanity.
 
-### Installation command
+#### Installation command
 `/plugins install https://raw.githubusercontent.com/H3rnand3zzz/profanity-plugins/master/security-tips.py`
