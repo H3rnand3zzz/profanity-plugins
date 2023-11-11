@@ -9,7 +9,7 @@ import sqlite3
 
 from pathlib import Path
 
-_cur = None
+_db_connection = None
 _editor = ""
 _current_user = ""
 _logs_dir = ""
@@ -17,8 +17,10 @@ _db_dir = ""
 _win = "History"
 _plugin_name = __file__.split('/')[-1] if __file__ else "history.py"
 
+
 def _handle_win_input():
     pass
+
 
 def _create_win(win):
     if not prof.win_exists(win):
@@ -32,11 +34,14 @@ def _show_error(error):
     prof.log_error(error_msg)
     return
 
+
 def _str_sanitize(text):
     return re.sub('[^a-zA-Z0-9\._]', '', text.replace("@", "_at_"))
 
+
 def _cmd_editor(*args):
     global _editor
+    _cur = _db_connection.cursor()
     msg_buffer = []
     if args and args[0] == "set":
         if len(args) < 2:
@@ -44,7 +49,8 @@ def _cmd_editor(*args):
             return
         _editor = args[1]
         prof.settings_string_set("history", "editor", _editor)
-        prof.cons_show(f"New editor set up successfully. New editor: {_editor}")
+        prof.cons_show(
+            f"New editor set up successfully. New editor: {_editor}")
         return
     if args and args[0] == "--no-repeat":
         prof.cons_show("[History Reader] Trying operation again...")
@@ -56,14 +62,17 @@ def _cmd_editor(*args):
         prof.send_line("/hh --no-repeat")
         return
     if not _editor:
-        prof.cons_show("Please, set up editor using /hh set. E.g. /hh set /usr/bin/vim")
+        prof.cons_show(
+            "Please, set up editor using /hh set. E.g. /hh set /usr/bin/vim")
         return
     if not (recipient := prof.get_current_recipient()):
         prof.cons_show("Please, use this command in a chat window")
         return
 
     tmpfpath = _logs_dir / f"{_str_sanitize(recipient)}.log"
-    res = _cur.execute("SELECT timestamp, from_jid, message FROM `chatlogs` WHERE from_jid=:jid OR to_jid=:jid ORDER BY id", {"jid": recipient})
+    res = _cur.execute("""SELECT timestamp, from_jid, message FROM `chatlogs` 
+                          WHERE ((`from_jid` = :jid AND `to_jid` = :myjid) OR (`from_jid` = :myjid AND `to_jid` = :jid))
+                          ORDER BY id""", {"jid": recipient, "myjid": _current_user})
 
     for bmsg in res.fetchall():
         try:
@@ -73,7 +82,8 @@ def _cmd_editor(*args):
         sender = "me" if msg[1] == _current_user else msg[1]
         msg_buffer.append(f"{msg[0]} - {sender}: {msg[2]}")
 
-    tmpfpath.write_text('\n'.join(msg_buffer), encoding="UTF-8", errors="replace")
+    tmpfpath.write_text('\n'.join(msg_buffer),
+                        encoding="UTF-8", errors="replace")
 
     pid = os.fork()
     if pid == 0:
@@ -86,44 +96,57 @@ def _cmd_editor(*args):
     try:
         tmpfpath.unlink()
     except Exception as e:
-        prof.log_error(f"[History Reader] Error on file deletion (path: {tmpfpath}): {e}")
+        prof.log_error(
+            f"[History Reader] Error on file deletion (path: {tmpfpath}): {e}")
     return
 
+
 def prof_on_connect(account_name, fulljid):
-    prof.log_debug(f"[History Reader] prof_on_connect called with this JID: {fulljid}")
+    prof.log_debug(
+        f"[History Reader] prof_on_connect called with this JID: {fulljid}")
     _init(fulljid)
 
+
 def prof_on_disconnect(account_name, fulljid):
-    prof.log_debug(f"[History Reader] prof_on_disconnect called with this JID: {fulljid}")
+    prof.log_debug(
+        f"[History Reader] prof_on_disconnect called with this JID: {fulljid}")
     global _current_user
     _current_user = ""
 
+
 def prof_init(version, status, account_name, fulljid):
-    prof.log_debug(f"[History Reader] prof_init called with this JID: {fulljid}")
+    prof.log_debug(
+        f"[History Reader] prof_init called with this JID: {fulljid}")
     _init(fulljid)
-    synopsis = [ "/hh" ]
+    synopsis = ["/hh"]
     description = "Open an editor and check user's history."
     args = [
-        [ "set", "Set custom editor." ]
+        ["set", "Set custom editor."]
     ]
     examples = [
         "/hh",
         "/hh set /usr/bin/vim",
         "/hh set gtk-open"
     ]
-    prof.register_command("/hh", 0, 2, synopsis, description, args, examples, _cmd_editor)
+    prof.register_command("/hh", 0, 2, synopsis,
+                          description, args, examples, _cmd_editor)
     prof.completer_add("/hh", ["set"])
     prof.filepath_completer_add("/hh set")
 
+
 def _init(fulljid):
-    global _current_user, _editor, _db_dir, _cur, _logs_dir
-    prof.log_debug(f"[History Reader] Initialization started with this JID: {fulljid}")
+    global _current_user, _editor, _db_dir, _logs_dir, _db_connection
+    prof.log_debug(
+        f"[History Reader] Initialization started with this JID: {fulljid}")
     _current_user = fulljid and fulljid.split('/')[0]
     if not _current_user:
-        prof.log_debug("[History Reader] Can't fetch current user, aborting initialization...")
+        prof.log_debug(
+            "[History Reader] Can't fetch current user, aborting initialization...")
         return
-    _logs_dir = Path("~/.local/share/profanity/chatlogs").expanduser() / _str_sanitize(_current_user)
-    _db_dir = Path("~/.local/share/profanity/database").expanduser() / _str_sanitize(_current_user)
+    _logs_dir = Path(
+        "~/.local/share/profanity/chatlogs").expanduser() / _str_sanitize(_current_user)
+    _db_dir = Path("~/.local/share/profanity/database").expanduser() / \
+        _str_sanitize(_current_user)
     if not _logs_dir.is_dir():
         _show_error(f"Can't open logs directory. Path: {_logs_dir}")
         return
@@ -134,13 +157,11 @@ def _init(fulljid):
     if not db_file.is_file():
         _show_error(f"Log db is not present. Path: {db_file}")
         return
-    con = sqlite3.connect(f"{db_file}")
-    con.text_factory = bytes
-    _cur = con.cursor()
+    _db_connection = sqlite3.connect(f"{db_file}")
+    _db_connection.text_factory = bytes
     _editor = prof.settings_string_get("history", "editor", "")
     if not _editor:
         prof.cons_show("Please, set up editor using /hh set.")
     else:
-        prof.cons_show(f"[History Reader] Successfully started. Editor: {_editor}")
-
-
+        prof.cons_show(
+            f"[History Reader] Successfully started. Editor: {_editor}")
