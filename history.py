@@ -9,11 +9,10 @@ import sqlite3
 
 from pathlib import Path
 
-_db_connection = None
 _editor = ""
 _current_user = ""
 _logs_dir = ""
-_db_dir = ""
+_db_file = ""
 _win = "History"
 _plugin_name = __file__.split('/')[-1] if __file__ else "history.py"
 
@@ -41,6 +40,8 @@ def _str_sanitize(text):
 
 def _cmd_editor(*args):
     global _editor
+    _db_connection = sqlite3.connect(f"{_db_file}")
+    _db_connection.text_factory = bytes
     _cur = _db_connection.cursor()
     msg_buffer = []
     if args and args[0] == "set":
@@ -136,7 +137,7 @@ def prof_init(version, status, account_name, fulljid):
 
 
 def _init(fulljid):
-    global _current_user, _editor, _db_dir, _logs_dir, _db_connection
+    global _current_user, _editor, _logs_dir, _db_file
     prof.log_debug(
         f"[History Reader] Initialization started with this JID: {fulljid}")
     _current_user = fulljid and fulljid.split('/')[0]
@@ -147,19 +148,17 @@ def _init(fulljid):
     _profanity_home = Path(os.getenv('XDG_DATA_HOME')
                            or "~/.local/share").expanduser() / "profanity"
     _logs_dir = _profanity_home / "chatlogs" / _str_sanitize(_current_user)
-    _db_dir = _profanity_home / "database" / _str_sanitize(_current_user)
+    db_dir = _profanity_home / "database" / _str_sanitize(_current_user)
     if not _logs_dir.is_dir():
         _show_error(f"Can't open logs directory. Path: {_logs_dir}")
         return
-    if not _db_dir.is_dir():
-        _show_error(f"Can't open DB directory. Path: {_db_dir}")
+    if not db_dir.is_dir():
+        _show_error(f"Can't open DB directory. Path: {db_dir}")
         return
-    db_file = _db_dir / "chatlog.db"
-    if not db_file.is_file():
-        _show_error(f"Log db is not present. Path: {db_file}")
+    _db_file = db_dir / "chatlog.db"
+    if not _db_file.is_file():
+        _show_error(f"Log db is not present. Path: {_db_file}")
         return
-    _db_connection = sqlite3.connect(f"{db_file}")
-    _db_connection.text_factory = bytes
     _editor = prof.settings_string_get("history", "editor", "")
     if not _editor:
         prof.cons_show("Please, set up editor using /hh set.")
