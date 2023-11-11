@@ -71,7 +71,8 @@ def _cmd_editor(*args):
 
     tmpfpath = _logs_dir / f"{_str_sanitize(recipient)}.log"
     res = _cur.execute("""SELECT timestamp, from_jid, message FROM `chatlogs` 
-                          WHERE ((`from_jid` = :jid AND `to_jid` = :myjid) OR (`from_jid` = :myjid AND `to_jid` = :jid))
+                          WHERE ((`from_jid` = :jid AND `to_jid` = :myjid) 
+                          OR (`from_jid` = :myjid AND `to_jid` = :jid))
                           ORDER BY id""", {"jid": recipient, "myjid": _current_user})
 
     for bmsg in res.fetchall():
@@ -143,10 +144,10 @@ def _init(fulljid):
         prof.log_debug(
             "[History Reader] Can't fetch current user, aborting initialization...")
         return
-    _logs_dir = Path(
-        "~/.local/share/profanity/chatlogs").expanduser() / _str_sanitize(_current_user)
-    _db_dir = Path("~/.local/share/profanity/database").expanduser() / \
-        _str_sanitize(_current_user)
+    _profanity_home = Path(os.getenv('XDG_DATA_HOME')
+                           or "~/.local/share").expanduser() / "profanity"
+    _logs_dir = _profanity_home / "chatlogs" / _str_sanitize(_current_user)
+    _db_dir = _profanity_home / "database" / _str_sanitize(_current_user)
     if not _logs_dir.is_dir():
         _show_error(f"Can't open logs directory. Path: {_logs_dir}")
         return
